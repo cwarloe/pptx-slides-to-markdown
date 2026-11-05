@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>BBP Outline - Mr. Life Manager</title>
+  <style>
+    /* Theme: blue is the default. Switch with <body data-theme="green|orange|purple|gray"> */
+    :root {
+      --accent: #1f5f9e;        /* strong: act bars, outer border */
+      --accent-mid: #bcd4ec;    /* key idea cells */
+      --accent-soft: #dce9f6;   /* section headers */
+      --accent-faint: #eef4fa;  /* explanation cells */
+      --accent-ink: #12365c;    /* text on tints */
+      --line: #8fb0d1;
+    }
+    body[data-theme="green"]  { --accent:#2e7d4f; --accent-mid:#bfe0cc; --accent-soft:#dcefe3; --accent-faint:#eff7f2; --accent-ink:#17482c; --line:#93c1a5; }
+    body[data-theme="orange"] { --accent:#c25e12; --accent-mid:#f5d2b0; --accent-soft:#fbe6d2; --accent-faint:#fdf3ea; --accent-ink:#6b3207; --line:#e0b48a; }
+    body[data-theme="purple"] { --accent:#6b46a8; --accent-mid:#d9cbee; --accent-soft:#e8dff6; --accent-faint:#f5f0fb; --accent-ink:#3a2266; --line:#b9a4dc; }
+    body[data-theme="gray"]   { --accent:#4a4f57; --accent-mid:#d0d3d8; --accent-soft:#e4e6e9; --accent-faint:#f3f4f5; --accent-ink:#23262b; --line:#a5a9b0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: white;
+      color: #1b1b1b;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    h1, h2 { color: var(--accent-ink); }
+
+    .bbp-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 2px solid var(--accent);
+      margin-bottom: 20px;
+      table-layout: fixed;
+    }
+
+    .bbp-table td {
+      border: 1px solid var(--line);
+      padding: 12px;
+      vertical-align: top;
+      font-size: 11pt;
+    }
+
+    .section-header {
+      background-color: var(--accent-soft);
+      color: var(--accent-ink);
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .act-header {
+      background-color: var(--accent);
+      color: #fff;
+      font-weight: bold;
+      font-size: 12pt;
+      text-align: center;
+    }
+
+    .key-idea-cell {
+      background-color: var(--accent-mid);
+      color: var(--accent-ink);
+      font-weight: bold;
+      vertical-align: middle;
+    }
+
+    .explanation-cell {
+      background-color: var(--accent-faint);
+      vertical-align: middle;
+    }
+
+    .transition-cell {
+      background-color: #fff;
+    }
+
+    .footer-text {
+      font-size: 10pt;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .label {
+      display: block;
+      font-size: 9pt;
+      font-weight: normal;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body data-theme="blue">
+  <h1>Beyond Bullet Points Outline</h1>
+  <h2>Mr. Life Manager</h2>
+  <h3>Audience: contributors and collaborators on the project, and prospective readers</h3>
+
+  <table class="bbp-table">
+    <colgroup>
+      <col style="width: 30%">
+      <col style="width: 30%">
+      <col style="width: 40%">
+    </colgroup>
+
+    <tr><td colspan="3" class="section-header">TITLE</td></tr>
+    <tr>
+      <td colspan="3"><strong>The Manual Nobody Handed You</strong><br>Practical adult-life systems for people who were never explicitly taught them.</td>
+    </tr>
+
+    <tr><td colspan="3" class="act-header">ACT 1: SETUP</td></tr>
+    <tr>
+      <td class="section-header">Setting</td>
+      <td class="section-header" colspan="2">Role</td>
+    </tr>
+    <tr>
+      <td>Adults are expected to run a home and a life, but most were never shown how.</td>
+      <td colspan="2">You're a capable person who learned by osmosis, or by failing until something stuck.</td>
+    </tr>
+    <tr>
+      <td class="section-header">Point A (Where am I?)</td>
+      <td class="section-header">Call to Action (How do I get from A to B?)</td>
+      <td class="section-header">Point B (Where do I want to be?)</td>
+    </tr>
+    <tr>
+      <td>Everything feels urgent because nothing was handled early, and embarrassment keeps people from asking.</td>
+      <td>Start with one entry page and one action, deliver a win, then invite the next step.</td>
+      <td>A calmer life where things get handled early.</td>
+    </tr>
+
+    <tr><td colspan="3" class="transition-cell"><span class="label">Transition 1</span>Mr. Life Manager is the manual. Three ideas explain it: the gap it fills, the systems it teaches, and how it earns trust.</td></tr>
+
+    <tr><td colspan="3" class="act-header">ACT 2: DEVELOP THE ACTION</td></tr>
+    <tr>
+      <td class="section-header">Key Idea (5 minutes)</td>
+      <td class="section-header">Explanation (15 minutes)</td>
+      <td class="section-header">Details (45 minutes)</td>
+    </tr>
+
+    <tr>
+      <td rowspan="9" class="key-idea-cell"><span class="label">Key Idea 1</span>Adult-Life Systems Were Never Explicitly Taught</td><td rowspan="3" class="explanation-cell"><span class="label">Explanation 1</span><strong>The Gap:</strong> knowledge that stayed invisible</td><td>Learned by osmosis or repeated failure</td>
+    </tr>
+    <tr>
+      <td>Experts see it as obvious</td>
+    </tr>
+    <tr>
+      <td>So nobody explains it</td>
+    </tr>
+    <tr>
+      <td rowspan="3" class="explanation-cell"><span class="label">Explanation 2</span><strong>The Cost:</strong> life lived in reaction</td><td>Decision fatigue and wasted money</td>
+    </tr>
+    <tr>
+      <td>Low-grade shame</td>
+    </tr>
+    <tr>
+      <td>Strained relationships</td>
+    </tr>
+    <tr>
+      <td rowspan="3" class="explanation-cell"><span class="label">Explanation 3</span><strong>The Apprentice Voice:</strong> passed on by someone who learned it</td><td>Mr. Life Manager is a real person, Dave Webster</td>
+    </tr>
+    <tr>
+      <td>Written by the apprentice who learned it</td>
+    </tr>
+    <tr>
+      <td>Readers get the apprentice's seat</td>
+    </tr>
+
+    <tr><td colspan="3" class="transition-cell"><span class="label">Transition 2</span>Nobody handed you the manual for adult life, and that's the gap this project fills. Next, let's look at the light, repeatable systems that replace reacting to everything.</td></tr>
+
+    <tr>
+      <td rowspan="9" class="key-idea-cell"><span class="label">Key Idea 2</span>Light, Repeatable Systems Replace Reaction</td><td rowspan="3" class="explanation-cell"><span class="label">Explanation 1</span><strong>Life Domains:</strong> the whole of life, not just the house</td><td>Home, food, money, and time</td>
+    </tr>
+    <tr>
+      <td>Health, work, and relationships</td>
+    </tr>
+    <tr>
+      <td>Paperwork, maintenance, and hospitality</td>
+    </tr>
+    <tr>
+      <td rowspan="3" class="explanation-cell"><span class="label">Explanation 2</span><strong>Cleaning as the Door:</strong> a visible place to start</td><td>Visible, urgent, and rewarding</td>
+    </tr>
+    <tr>
+      <td>Not a cleaning brand</td>
+    </tr>
+    <tr>
+      <td>The house is life management</td>
+    </tr>
+    <tr>
+      <td rowspan="3" class="explanation-cell"><span class="label">Explanation 3</span><strong>Easy Actions:</strong> make the right action the easy one</td><td>One pain at a time</td>
+    </tr>
+    <tr>
+      <td>One directive solution</td>
+    </tr>
+    <tr>
+      <td>One clear end state</td>
+    </tr>
+
+    <tr><td colspan="3" class="transition-cell"><span class="label">Transition 3</span>Those systems help you handle things early, but people won't try them without trust. Let's see why a free win comes before any ask.</td></tr>
+
+    <tr>
+      <td rowspan="9" class="key-idea-cell"><span class="label">Key Idea 3</span>A Free Win Comes Before Any Ask</td><td rowspan="3" class="explanation-cell"><span class="label">Explanation 1</span><strong>Free Front Door:</strong> help first</td><td>Entry pages for each pain</td>
+    </tr>
+    <tr>
+      <td>One ungated action each</td>
+    </tr>
+    <tr>
+      <td>Email ask comes after a completed win</td>
+    </tr>
+    <tr>
+      <td rowspan="3" class="explanation-cell"><span class="label">Explanation 2</span><strong>Paths Beyond the Free Tier:</strong> grow with the reader</td><td>Deeper paid guides per domain</td>
+    </tr>
+    <tr>
+      <td>Offered after a free win</td>
+    </tr>
+    <tr>
+      <td>House-in-order flagship system</td>
+    </tr>
+    <tr>
+      <td rowspan="3" class="explanation-cell"><span class="label">Explanation 3</span><strong>Decisions on Record:</strong> reasoning stays visible</td><td>Decision log with numbered ADRs</td>
+    </tr>
+    <tr>
+      <td>Audience and payer under review</td>
+    </tr>
+    <tr>
+      <td>Competitor research documented</td>
+    </tr>
+
+    <tr><td colspan="3" class="act-header">ACT 3: RESOLUTION</td></tr>
+    <tr>
+      <td class="section-header">Challenge (Recap)</td>
+      <td class="section-header">Action</td>
+      <td class="section-header">Outcome</td>
+    </tr>
+    <tr>
+      <td><strong>How do we help without overwhelming?</strong><br><br>• Which pain comes first?<br>• What is the smallest useful win?<br>• When is it right to ask for anything?</td>
+      <td><strong>Build it this way:</strong><br><br>• Start with one entry page and one action<br>• Deliver a win, then invite the next step<br>• Record decisions as they're made</td>
+      <td><strong>A calmer life:</strong><br><br>• Problems handled early<br>• Systems that are easy to keep<br>• Readers who trust what they were given</td>
+    </tr>
+
+    <tr><td colspan="3" class="section-header">CLOSING LINE</td></tr>
+    <tr><td colspan="3">Nobody handed you the manual. This is it.</td></tr>
+
+    <tr>
+      <td colspan="3" class="footer-text">
+        Based on the Beyond Bullet Points story template by Cliff Atkinson<br>
+        Mr. Life Manager
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
