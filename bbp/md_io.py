@@ -94,11 +94,13 @@ def render_markdown(o: Outline, md_path: Path, extra_images: dict | None = None)
     for i, k in enumerate(o.key_ideas):
         if i > 0 and i < len(tr):
             transition(i + 1, tr[i])
-        sec(3, f"Key Idea {i + 1}: {k.headline}", "", f"key-{i + 1}")
+        first, _, rest = k.headline.partition("\n")
+        sec(3, f"Key Idea {i + 1}: {first}", rest, f"key-{i + 1}")
         for j, e in enumerate(k.explanations):
-            sec(4, f"Explanation {i + 1}.{j + 1}: {e.text}", "", f"exp-{i + 1}-{j + 1}")
+            first, _, rest = e.text.partition("\n")
+            sec(4, f"Explanation {i + 1}.{j + 1}: {first}", rest, f"exp-{i + 1}-{j + 1}")
             if e.details:
-                out.extend([f"- {d}" for d in e.details] + [""])
+                out.extend(["- " + d.replace("\n", "\n  ") for d in e.details] + [""])
             for di in range(len(e.details)):
                 pics(f"det-{i + 1}-{j + 1}-{di + 1}")
     for t_i in range(max(len(o.key_ideas), 1), len(tr)):
@@ -156,7 +158,31 @@ def parse_markdown(text: str) -> Outline:
         elif cur is not None:
             cur[2].append(ln)
     acts, ki, ex = [], None, None
-    content = lambda ls: norm("\n".join(l for l in ls if not l.startswith(">") and not l.startswith("![") and not l.startswith("- ")))
+    content = lambda ls: norm("\n".join(l for l in ls if not l.startswith(">") and not l.startswith("![") and not l.startswith("- ") and not l.startswith("  ")))
+
+    def expl_body_and_details(ls):
+        body, details, buf = [], [], None
+        for l in ls:
+            if l.startswith("- "):
+                if buf is not None:
+                    details.append(norm("\n".join(buf)) if len(buf) > 1 else buf[0].strip())
+                buf = [l[2:]]
+                continue
+            if buf is not None:
+                if l.startswith("  "):
+                    buf.append(l[2:])
+                elif l.startswith(">") or l.startswith("!["):
+                    details.append(norm("\n".join(buf)) if len(buf) > 1 else buf[0].strip())
+                    buf = None
+                elif l.strip():
+                    buf.append(l)
+                continue
+            if not l.startswith(">") and not l.startswith("!["):
+                body.append(l)
+        if buf is not None:
+            details.append(norm("\n".join(buf)) if len(buf) > 1 else buf[0].strip())
+        return norm("\n".join(body)), details
+
 
     def grab_transitions(ls):
         buf = None
@@ -185,7 +211,10 @@ def parse_markdown(text: str) -> Outline:
         elif level == 3:
             m = re.match(r"^Key Idea \d+: (.*)$", head)
             if m:
-                ki = KeyIdea(m.group(1))
+                headline = m.group(1)
+                if txt:
+                    headline = norm(headline + "\n" + txt)
+                ki = KeyIdea(headline)
                 o.key_ideas.append(ki)
             else:
                 field = {"Setting": "setting", "Role": "role", "Point A": "point_a", "Call to Action": "call_to_action",
@@ -195,7 +224,11 @@ def parse_markdown(text: str) -> Outline:
         elif level == 4:
             m = re.match(r"^Explanation [\d.]+: (.*)$", head)
             if m and ki is not None:
-                ex = Explanation(m.group(1), [l[2:].strip() for l in ls if l.startswith("- ")])
+                body, details = expl_body_and_details(ls)
+                text_val = m.group(1)
+                if body:
+                    text_val = norm(text_val + "\n" + body)
+                ex = Explanation(text_val, details)
                 ki.explanations.append(ex)
         grab_transitions(ls)
     if acts:

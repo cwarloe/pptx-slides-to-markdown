@@ -266,17 +266,23 @@ def _slide_text(slide):
         return ""
 
 
+def _bbp_label(slide):
+    for shp in slide.shapes:
+        if shp.has_text_frame and shp.name == "BBP Label":
+            return shp.text_frame.text.strip().lower()
+    return ""
+
+
 def _guess_layout(slide):
     """Fallback for hand-edited decks whose layouts were renamed."""
     name = slide.slide_layout.name
     if name in LAYOUTS:
         return name
-    for shp in slide.shapes:
-        if shp.has_text_frame and shp.name == "BBP Label":
-            lab = shp.text_frame.text.lower()
-            for k, v in (("transition", "Transition"), ("key idea", "KeyPoint"), ("explanation", "Explanation")):
-                if lab.startswith(k):
-                    return v
+    lab = _bbp_label(slide)
+    for k, v in (("transition", "Transition"), ("key idea", "KeyPoint"), ("explanation", "Explanation"),
+                 ("challenge", "Resolution"), ("action", "Resolution"), ("outcome", "Resolution")):
+        if lab.startswith(k):
+            return v
     return "Detail"
 
 
@@ -324,10 +330,18 @@ def pptx_to_outline(path: str | Path):
         elif lay == "Detail" and ex is not None:
             ex.details.append(txt)
             key = f"det-{len(o.key_ideas)}-{len(ki.explanations)}-{len(ex.details)}"
-        elif lay == "Resolution" and res_i < 3:
-            setattr(o, res[res_i], txt)
-            key = res[res_i]
-            res_i += 1
+        elif lay == "Resolution":
+            lab = _bbp_label(slide)
+            if lab in ("challenge", "action", "outcome"):
+                field = lab
+            elif res_i < 3:
+                field = res[res_i]
+                res_i += 1
+            else:
+                field = None
+            if field:
+                setattr(o, field, txt)
+                key = field
         elif lay == "Closing":
             o.closing = txt
             key = "closing"

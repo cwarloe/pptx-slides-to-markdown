@@ -85,3 +85,33 @@ def test_hand_edited_deck_picture_is_extracted(tmp_path):
 def test_template_file(tmp_path):
     build_template("green", tmp_path / "m.pptx")
     assert [l.name for l in Presentation(str(tmp_path / "m.pptx")).slide_layouts] == LAYOUTS
+
+
+def test_multiline_key_idea_explanation_and_detail_survive_markdown(tmp_path):
+    o = parse_html(FIXTURES[0].read_text(encoding="utf-8"))
+    o.key_ideas[0].headline = "Idea first\nIdea second"
+    o.key_ideas[0].explanations[0].text = "Explain first\nExplain second"
+    o.key_ideas[0].explanations[0].details[0] = "Detail first\nDetail second"
+    md = render_markdown(o, tmp_path / "x.md")
+    o2 = parse_markdown(md.read_text())
+    assert o2.key_ideas[0].headline == "Idea first\nIdea second"
+    assert o2.key_ideas[0].explanations[0].text == "Explain first\nExplain second"
+    assert o2.key_ideas[0].explanations[0].details[0] == "Detail first\nDetail second"
+
+
+def test_renamed_resolution_layout_keeps_challenge_action_outcome(tmp_path):
+    o = parse_html(FIXTURES[0].read_text(encoding="utf-8"))
+    deck = outline_to_pptx(o, tmp_path / "d.pptx")
+    prs = Presentation(str(deck))
+    for lay in prs.slide_layouts:
+        if lay.name == "Resolution":
+            lay._element.cSld.set("name", "Renamed Resolution")
+    prs.save(str(tmp_path / "renamed.pptx"))
+    o2, _ = pptx_to_outline(tmp_path / "renamed.pptx")
+    assert o2.challenge == o.challenge
+    assert o2.action == o.action
+    assert o2.outcome == o.outcome
+    last_details = o2.key_ideas[-1].explanations[-1].details
+    assert o.challenge not in last_details
+    assert o.action not in last_details
+    assert o.outcome not in last_details
