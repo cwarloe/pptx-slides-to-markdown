@@ -13,6 +13,31 @@ from .model import THEMES, Explanation, KeyIdea, Outline, norm, strip_md
 
 FM_KEYS = ("heading", "name", "audience", "theme")
 
+# Line prefixes that the outline grammar treats as structure.
+_ESC_PREFIXES = ("# ", "## ", "### ", "#### ", "- ", "> ", "![")
+
+
+def escape_md_line(ln: str) -> str:
+    """Prefix a backslash so a body line is not parsed as structure."""
+    if ln.startswith(_ESC_PREFIXES) or ln == "---":
+        return "\\" + ln
+    left = ln.lstrip(" \t")
+    if left.startswith(_ESC_PREFIXES) or left == "---":
+        return "\\" + left
+    return ln
+
+
+def escape_md_body(text: str) -> str:
+    if not text:
+        return text
+    return "\n".join(escape_md_line(ln) for ln in text.split("\n"))
+
+
+def unescape_md_line(ln: str) -> str:
+    if ln.startswith("\\") and (ln[1:].startswith(_ESC_PREFIXES) or ln[1:] == "---"):
+        return ln[1:]
+    return ln
+
 
 def images_dirname(stem: str) -> str:
     return f"{stem}_images"
@@ -74,12 +99,13 @@ def render_markdown(o: Outline, md_path: Path, extra_images: dict | None = None)
         pics(f"transition-{n}")
 
     def sec(level, title, text, key=None):
-        out.extend([f"{'#' * level} {title}", "", text, ""] if text else [f"{'#' * level} {title}", ""])
+        body = escape_md_body(text) if text else text
+        out.extend([f"{'#' * level} {title}", "", body, ""] if body else [f"{'#' * level} {title}", ""])
         if key:
             pics(key)
 
     acts = o.acts + [""] * (3 - len(o.acts))
-    out.extend([f"# {o.headline}", "", o.subtitle, ""] if o.subtitle else [f"# {o.headline}", ""])
+    out.extend([f"# {o.headline}", "", escape_md_body(o.subtitle), ""] if o.subtitle else [f"# {o.headline}", ""])
     pics("title")
     sec(2, acts[0], "", "act-1")
     sec(3, "Setting", o.setting, "setting")
@@ -110,10 +136,13 @@ def render_markdown(o: Outline, md_path: Path, extra_images: dict | None = None)
     sec(3, "Action", o.action, "action")
     sec(3, "Outcome", o.outcome, "outcome")
     sec(2, "Closing", o.closing, "closing")
-    if o.footer:
-        out.extend(["---", "", "\n".join(f"*{ln}*" if ln else "" for ln in o.footer.split("\n")), ""])
     for key in sorted(set(extra_images) - _used_keys(o)):
         pics(key)
+    # Always emit the footer delimiter so an in-body "---" cannot be
+    # mistaken for it when the footer is empty.
+    out.extend(["---", ""])
+    if o.footer:
+        out.extend(["\n".join(f"*{ln}*" if ln else "" for ln in o.footer.split("\n")), ""])
     md_path.write_text("\n".join(out).rstrip() + "\n", encoding="utf-8")
     return md_path
 
@@ -130,6 +159,18 @@ def _used_keys(o: Outline) -> set:
     return keys
 
 
+def _is_footer_block(lines: list[str]) -> bool:
+    """True if every non-empty line looks like a rendered footer italic line."""
+    for ln in lines:
+        s = ln.strip()
+        if not s:
+            continue
+        if re.match(r"^\*.*\*$", s):
+            continue
+        return False
+    return True
+
+
 def parse_markdown(text: str) -> Outline:
     o = Outline()
     lines = text.replace("\r", "").split("\n")
@@ -143,11 +184,14 @@ def parse_markdown(text: str) -> Outline:
             i += 1
         i += 1
     body = lines[i:]
-    # footer: after the last '---' line
+    # footer: last "---" whose trailing block is only italic or blank lines
+    # (the shape render_markdown writes), including an empty footer.
     if "---" in body:
         idx = len(body) - 1 - body[::-1].index("---")
-        o.footer = norm("\n".join(re.sub(r"^\*(.*)\*$", r"\1", ln.strip()) for ln in body[idx + 1:]))
-        body = body[:idx]
+        after = body[idx + 1:]
+        if _is_footer_block(after):
+            o.footer = norm("\n".join(re.sub(r"^\*(.*)\*$", r"\1", ln.strip()) for ln in after))
+            body = body[:idx]
     blocks: list[tuple[str, str, list[str]]] = []  # (kind, heading, content lines)
     cur = None
     for ln in body:
@@ -158,7 +202,14 @@ def parse_markdown(text: str) -> Outline:
         elif cur is not None:
             cur[2].append(ln)
     acts, ki, ex = [], None, None
-    content = lambda ls: norm("\n".join(l for l in ls if not l.startswith(">") and not l.startswith("![") and not l.startswith("- ") and not l.startswith("  ")))
+
+    def content(ls):
+        kept = []
+        for l in ls:
+            if l.startswith(">") or l.startswith("![") or l.startswith("- "):
+                continue
+            kept.append(unescape_md_line(l))
+        return norm("\n".join(kept))
 
     def expl_body_and_details(ls):
         body, details, buf = [], [], None
@@ -178,7 +229,7 @@ def parse_markdown(text: str) -> Outline:
                     buf.append(l)
                 continue
             if not l.startswith(">") and not l.startswith("!["):
-                body.append(l)
+                body.append(unescape_md_line(l))
         if buf is not None:
             details.append(norm("\n".join(buf)) if len(buf) > 1 else buf[0].strip())
         return norm("\n".join(body)), details

@@ -26,11 +26,41 @@ def _cell_md(td: Tag) -> str:
                     continue
                 elif ch.name in ("strong", "b"):
                     parts.append("**" + " ".join(ch.get_text(" ").split()) + "**")
+                elif ch.name == "li":
+                    if parts and not parts[-1].endswith("\n"):
+                        parts.append("\n")
+                    walk(ch)
+                    if not parts or not parts[-1].endswith("\n"):
+                        parts.append("\n")
                 else:
                     walk(ch)
 
     walk(td)
     return norm("".join(parts))
+
+
+def _wrap_md(nodes) -> str:
+    wrap = BeautifulSoup("<td></td>", "html.parser").td
+    for n in nodes:
+        wrap.append(n)
+    return _cell_md(wrap)
+
+
+def _title_headline_subtitle(td: Tag) -> tuple[str, str]:
+    """Split a TITLE cell, unwrapping the outer <strong> the renderer adds."""
+    td = BeautifulSoup(str(td), "html.parser").td
+    before, after, seen_br = [], [], False
+    for ch in list(td.children):
+        if isinstance(ch, Tag) and ch.name == "br":
+            seen_br = True
+            continue
+        (after if seen_br else before).append(ch)
+    if (len(before) == 1 and isinstance(before[0], Tag)
+            and before[0].name in ("strong", "b")):
+        headline = _cell_md(before[0])
+    else:
+        headline = _wrap_md(before)
+    return headline, _wrap_md(after)
 
 
 def parse_html(src: str) -> Outline:
@@ -81,9 +111,9 @@ def parse_html(src: str) -> Outline:
             continue
         cells = [_cell_md(td) for td in tds]
         if pending == "title":
-            first, _, rest = cells[0].partition("\n")
-            o.headline = first.replace("**", "").strip()
-            o.subtitle = rest.strip()
+            first, rest = _title_headline_subtitle(tds[0])
+            o.headline = first
+            o.subtitle = rest
         elif pending == "setting":
             o.setting, o.role = cells[0], cells[1]
         elif pending == "points":

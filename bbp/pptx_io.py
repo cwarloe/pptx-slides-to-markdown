@@ -13,7 +13,7 @@ from pathlib import Path
 from lxml import etree
 from pptx import Presentation
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE
+from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE, PP_PLACEHOLDER
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 from pptx.oxml.ns import qn
@@ -193,6 +193,13 @@ def _label(slide, text, theme, light=False):
     f.color.rgb = _rgb(t["mid"] if light else t["accent"])
 
 
+def _hidden_label(slide, text):
+    """Off-slide BBP Label so renamed layouts can still be identified."""
+    tb = slide.shapes.add_textbox(Inches(0), Inches(-0.4), Inches(4), Inches(0.3))
+    tb.name = "BBP Label"
+    tb.text_frame.text = text.upper()
+
+
 def outline_to_pptx(o: Outline, out: str | Path, template: str | Path | None = None, theme: str | None = None,
                     slide_transitions: bool = True) -> Path:
     theme = theme or o.theme
@@ -203,25 +210,28 @@ def outline_to_pptx(o: Outline, out: str | Path, template: str | Path | None = N
     cp.comments = o.footer
     cp.author = o.heading  # keeps <h1> for round-trip
 
-    def add(layout, headline, notes, label=None, light=False, sub=None):
+    def add(layout, headline, notes, label=None, light=False, sub=None, hidden_label=False):
         s = prs.slides.add_slide(_layout(prs, layout))
         s.shapes.title.text = strip_md(headline).replace("\n", " ") if layout not in ("Resolution",) else strip_md(headline)
         if sub is not None and len(s.placeholders) > 1:
             s.placeholders[1].text = sub
         if label:
-            _label(s, label, theme, light)
+            if hidden_label:
+                _hidden_label(s, label)
+            else:
+                _label(s, label, theme, light)
         s.notes_slide.notes_text_frame.text = notes
         return s
 
     acts = o.acts + [""] * (3 - len(o.acts))
-    add("Title", o.headline, o.headline + ("\n" + o.subtitle if o.subtitle else ""), sub=o.subtitle)
-    s = add("Act Header", acts[0], acts[0])
+    add("Title", o.headline, o.headline + ("\n" + o.subtitle if o.subtitle else ""), sub=o.subtitle, label="Title", hidden_label=True)
+    s = add("Act Header", acts[0], acts[0], label="Act Header", hidden_label=True)
     slide_transitions and _set_transition(s, "push")
-    add("Setting", o.setting, o.setting)
-    add("Role", o.role, o.role)
-    add("PointA", o.point_a, o.point_a)
-    add("PointB", o.point_b, o.point_b)
-    add("CallToAction", o.call_to_action, o.call_to_action)
+    add("Setting", o.setting, o.setting, label="Setting", hidden_label=True)
+    add("Role", o.role, o.role, label="Role", hidden_label=True)
+    add("PointA", o.point_a, o.point_a, label="Point A", hidden_label=True)
+    add("PointB", o.point_b, o.point_b, label="Point B", hidden_label=True)
+    add("CallToAction", o.call_to_action, o.call_to_action, label="Call to Action", hidden_label=True)
 
     def transition(n, text):
         s = add("Transition", text, text, label=f"Transition {n}", light=True)
@@ -230,7 +240,7 @@ def outline_to_pptx(o: Outline, out: str | Path, template: str | Path | None = N
     tr = o.transitions
     if tr:
         transition(1, tr[0])
-    s = add("Act Header", acts[1], acts[1])
+    s = add("Act Header", acts[1], acts[1], label="Act Header", hidden_label=True)
     slide_transitions and _set_transition(s, "push")
     for i, k in enumerate(o.key_ideas):
         if i > 0 and i < len(tr):
@@ -242,22 +252,26 @@ def outline_to_pptx(o: Outline, out: str | Path, template: str | Path | None = N
                 add("Detail", d, d)
     for t_i in range(max(len(o.key_ideas), 1), len(tr)):
         transition(t_i + 1, tr[t_i])
-    s = add("Act Header", acts[2], acts[2])
+    s = add("Act Header", acts[2], acts[2], label="Act Header", hidden_label=True)
     slide_transitions and _set_transition(s, "push")
     for lab, txt in (("Challenge", o.challenge), ("Action", o.action), ("Outcome", o.outcome)):
-        first = txt.split("\n")[0] if txt else lab
+        first = txt.split("\n")[0] if txt else ""
         add("Resolution", first, txt, label=lab)
-    add("Closing", o.closing, o.closing)
+    add("Closing", o.closing, o.closing, label="Closing", hidden_label=True)
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(str(out))
     return out
 
 
-def _slide_text(slide):
-    notes = ""
+def _notes_text(slide):
     if slide.has_notes_slide:
-        notes = norm(slide.notes_slide.notes_text_frame.text)
+        return norm(slide.notes_slide.notes_text_frame.text)
+    return ""
+
+
+def _slide_text(slide):
+    notes = _notes_text(slide)
     if notes:
         return notes
     try:
@@ -273,16 +287,107 @@ def _bbp_label(slide):
     return ""
 
 
+# Longer prefixes first so "call to action" is not read as "action".
+_LABEL_LAYOUTS = (
+    ("transition", "Transition"),
+    ("key idea", "KeyPoint"),
+    ("explanation", "Explanation"),
+    ("challenge", "Resolution"),
+    ("call to action", "CallToAction"),
+    ("point a", "PointA"),
+    ("point b", "PointB"),
+    ("action", "Resolution"),
+    ("outcome", "Resolution"),
+    ("setting", "Setting"),
+    ("role", "Role"),
+    ("act header", "Act Header"),
+    ("title", "Title"),
+    ("closing", "Closing"),
+)
+
+_LAYOUT_TAGS = {
+    "SETTING": "Setting",
+    "ROLE": "Role",
+    "POINT A": "PointA",
+    "POINT B": "PointB",
+    "CALL TO ACTION": "CallToAction",
+}
+
+
+def _layout_from_label(lab: str) -> str:
+    lab = (lab or "").strip().lower()
+    if not lab:
+        return ""
+    for k, v in _LABEL_LAYOUTS:
+        if lab.startswith(k):
+            return v
+    return ""
+
+
+def _layout_tag_name(slide) -> str:
+    """Act 1 layouts carry a SETTING / ROLE / POINT A tag on the layout itself."""
+    try:
+        shapes = slide.slide_layout.shapes
+    except (AttributeError, ValueError):
+        shapes = _shapes(slide.slide_layout)
+    for shp in shapes:
+        if not getattr(shp, "has_text_frame", False):
+            continue
+        t = shp.text_frame.text.strip().upper()
+        if t in _LAYOUT_TAGS:
+            return _LAYOUT_TAGS[t]
+    return ""
+
+
+def _has_subtitle_placeholder(slide) -> bool:
+    """Only the Title layout is cloned from a title slide, so it has a subtitle."""
+    try:
+        return any(ph.placeholder_format.type == PP_PLACEHOLDER.SUBTITLE
+                   for ph in slide.slide_layout.placeholders)
+    except Exception:
+        return False
+
+
+def _layout_title_align(slide):
+    try:
+        return slide.slide_layout.placeholders[0].text_frame.paragraphs[0].alignment
+    except Exception:
+        return None
+
+
+def _layout_bg_luminance(slide):
+    try:
+        bg = slide.slide_layout._element.cSld.find(qn("p:bg"))
+        if bg is None:
+            return None
+        vals = bg.xpath(".//*[local-name()='srgbClr']/@val")
+        if not vals:
+            return None
+        h = vals[0]
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        return 0.299 * r + 0.587 * g + 0.114 * b
+    except Exception:
+        return None
+
+
 def _guess_layout(slide):
     """Fallback for hand-edited decks whose layouts were renamed."""
     name = slide.slide_layout.name
     if name in LAYOUTS:
         return name
-    lab = _bbp_label(slide)
-    for k, v in (("transition", "Transition"), ("key idea", "KeyPoint"), ("explanation", "Explanation"),
-                 ("challenge", "Resolution"), ("action", "Resolution"), ("outcome", "Resolution")):
-        if lab.startswith(k):
-            return v
+    found = _layout_from_label(_bbp_label(slide))
+    if found:
+        return found
+    tag = _layout_tag_name(slide)
+    if tag:
+        return tag
+    if _has_subtitle_placeholder(slide):
+        return "Title"
+    lum = _layout_bg_luminance(slide)
+    if lum is not None and lum < 70:
+        if _layout_title_align(slide) == PP_ALIGN.CENTER:
+            return "Closing"
+        return "Act Header"
     return "Detail"
 
 
@@ -340,6 +445,10 @@ def pptx_to_outline(path: str | Path):
             else:
                 field = None
             if field:
+                # Empty fields used to put the label word in the title with
+                # empty notes; do not treat that title as content.
+                if not _notes_text(slide) and txt.lower() == field.lower():
+                    txt = ""
                 setattr(o, field, txt)
                 key = field
         elif lay == "Closing":
