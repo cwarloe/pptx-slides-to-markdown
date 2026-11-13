@@ -1,0 +1,87 @@
+  <style>
+    /* Theme: blue is the default. Switch with <body data-theme="green|orange|purple|gray"> */
+    :root {
+      --accent: #1f5f9e;        /* strong: act bars, outer border */
+      --accent-mid: #bcd4ec;    /* key idea cells */
+      --accent-soft: #dce9f6;   /* section headers */
+      --accent-faint: #eef4fa;  /* explanation cells */
+      --accent-ink: #12365c;    /* text on tints */
+      --line: #8fb0d1;
+    }
+    body[data-theme="green"]  { --accent:#2e7d4f; --accent-mid:#bfe0cc; --accent-soft:#dcefe3; --accent-faint:#eff7f2; --accent-ink:#17482c; --line:#93c1a5; }
+    body[data-theme="orange"] { --accent:#c25e12; --accent-mid:#f5d2b0; --accent-soft:#fbe6d2; --accent-faint:#fdf3ea; --accent-ink:#6b3207; --line:#e0b48a; }
+    body[data-theme="purple"] { --accent:#6b46a8; --accent-mid:#d9cbee; --accent-soft:#e8dff6; --accent-faint:#f5f0fb; --accent-ink:#3a2266; --line:#b9a4dc; }
+    body[data-theme="gray"]   { --accent:#4a4f57; --accent-mid:#d0d3d8; --accent-soft:#e4e6e9; --accent-faint:#f3f4f5; --accent-ink:#23262b; --line:#a5a9b0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: white;
+      color: #1b1b1b;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    h1, h2 { color: var(--accent-ink); }
+
+    .bbp-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 2px solid var(--accent);
+      margin-bottom: 20px;
+      table-layout: fixed;
+    }
+
+    .bbp-table td {
+      border: 1px solid var(--line);
+      padding: 12px;
+      vertical-align: top;
+      font-size: 11pt;
+    }
+
+    .section-header {
+      background-color: var(--accent-soft);
+      color: var(--accent-ink);
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .act-header {
+      background-color: var(--accent);
+      color: #fff;
+      font-weight: bold;
+      font-size: 12pt;
+      text-align: center;
+    }
+
+    .key-idea-cell {
+      background-color: var(--accent-mid);
+      color: var(--accent-ink);
+      font-weight: bold;
+      vertical-align: middle;
+    }
+
+    .explanation-cell {
+      background-color: var(--accent-faint);
+      vertical-align: middle;
+    }
+
+    .transition-cell {
+      background-color: #fff;
+    }
+
+    .footer-text {
+      font-size: 10pt;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .label {
+      display: block;
+      font-size: 9pt;
+      font-weight: normal;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+  </style>

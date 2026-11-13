@@ -1,1 +1,4 @@
 python-pptx
+beautifulsoup4
+Pillow
+lxml

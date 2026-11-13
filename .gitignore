@@ -9,3 +9,6 @@ venv/
 Thumbs.db
 sample-output/*
 !sample-output/.gitkeep
+
+out/
+.pytest_cache/
